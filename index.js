@@ -1,25 +1,25 @@
 // Requires
 const yargs = require('yargs');
-const fs = require("fs");
 const tools = require('simple-svg-tools');
 
 // Options > Rebrand options 
 const brandOptions = {
 	// eg: 'green':'red' replaces the colour green with red.
-	'#6859a3':'green',
-	'#675aa2':'green'
+	// 'default': 'red' change all to red if no colours specified.
+	'#cd6425':'black',
+	'#696868':'purple'
 } 
 
 // Options > Input/Output
-const input = './svgs/';
-const output = './svgs/output/';
-
+const input = './input/';
+const output = './output/'; 
+ 
 // Did you start correctly?
-console.log('-------------------------------------');
+console.log('------------------------------------------');
 console.log('SVG rebrander reporting for duty.');
-console.log('-------------------------------------');
+console.log('------------------------------------------');
 console.log(JSON.stringify(brandOptions, null, "  ")); 
-console.log('-------------------------------------');
+console.log('------------------------------------------');
 
 // Commands 
 const argv = yargs
@@ -44,14 +44,14 @@ const argv = yargs
 // Bulk manipulate SVGs by folder
 const collectionSVG = () => {
 	// Import SVGs from direction
-	tools.ImportDir(input).then(collection => {
+	tools.ImportDir(input, {'include-subdirs': false}).then(collection => {
+
 	// Perform action on each SVG located.
     collection.forEach((svg, name) => { 
 	    console.log('Imported SVG: ' + name + '.svg');
 
 	    // Optimise SVG for manipulation
 		tools.SVGO(svg).then(svg => {
-			console.log('Optimising SVG');
 
 			// Change colours
 			tools.ChangePalette(svg, brandOptions).then(svg => {
@@ -61,11 +61,6 @@ const collectionSVG = () => {
 				tools.ExportSVG(svg, output + name + '.svg').then(() => { 
 					console.log('Exported: ' + name + '.svg');
 
-					console.log('Press any key to exit');
-
-					process.stdin.setRawMode(true);
-					process.stdin.resume();
-					process.stdin.on('data', process.exit.bind(process, 0));
 				}).catch(err => {
 					console.log(err);
 				}); 
@@ -75,6 +70,11 @@ const collectionSVG = () => {
 		}).catch(err => console.log(err));
 
 	});
+
+
+	process.stdin.setRawMode(true);
+	process.stdin.resume();
+	process.stdin.on('data', process.exit.bind(process, 0));
 
 	}).catch(err => { 
 	    console.log(err);
@@ -120,13 +120,16 @@ const singleSVG = () => {
 // REQ: Single SVG rebrand
 if (argv.rebrand) {
     console.log('Hold tight. Rebranding SVGs...');
-    // Update companies...
+    // Update SVG...
     singleSVG(); 
+
 }
 
 // REQ: Bulk SVG rebrand
 if (argv.collection) {
-    console.log('Hold tight. Rebranding SVGs Collection...');
-    // Update companies...
+    console.log('Hold tight. Rebranding SVGs collection...');
+    console.log('------------------------------------------');
+    // Update SVGs...
     collectionSVG(); 
+
 }
