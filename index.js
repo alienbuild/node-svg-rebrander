@@ -1,16 +1,17 @@
 // Requires
 const yargs = require('yargs');
 const tools = require('simple-svg-tools');
+const fs = require('fs');
+const path = require('path');
 
 // Options > Rebrand options 
-const brandOptions = {
+const brandOptions = { 
 	// eg: 'green':'red' replaces the colour green with red.
 	// 'default': 'red' change all to red if no colours specified.
-	'#cd6425':'black',
-	'#696868':'purple'
+	'#696868': 'red'
 } 
 
-// Options > Input/Output
+// Options > Input/Output 
 const input = './input/';
 const output = './output/'; 
  
@@ -18,8 +19,7 @@ const output = './output/';
 console.log('------------------------------------------');
 console.log('SVG rebrander reporting for duty.');
 console.log('------------------------------------------');
-console.log(JSON.stringify(brandOptions, null, "  ")); 
-console.log('------------------------------------------');
+
 
 // Commands 
 const argv = yargs
@@ -35,6 +35,12 @@ const argv = yargs
         	alias: 'collection',
         	describe: 'Bulk rebrand SVGs by folder',
         	string: false
+        },
+        o: {
+        	demand: false,
+        	alias: 'symbolise',
+        	describe: 'output SVG symbols into a .njk file',
+        	string: false
         }
     })
     .help()
@@ -43,6 +49,8 @@ const argv = yargs
 
 // Bulk manipulate SVGs by folder
 const collectionSVG = () => {
+	console.log(JSON.stringify(brandOptions, null, "  ")); 
+	console.log('------------------------------------------');
 	// Import SVGs from direction
 	tools.ImportDir(input, {'include-subdirs': false}).then(collection => {
 
@@ -50,8 +58,17 @@ const collectionSVG = () => {
     collection.forEach((svg, name) => { 
 	    console.log('Imported SVG: ' + name + '.svg');
 
+	    tools.GetPalette(svg).then(result => {
+		    console.log('Colors used in SVG: ' + result.colors.join(', '));
+		    if (result.notices.length) {
+		        result.notices.forEach(notice => console.log(notice));
+		    }
+		}).catch(err => {
+		    console.log(err);
+		});
+ 
 	    // Optimise SVG for manipulation
-		tools.SVGO(svg).then(svg => {
+		tools.SVGO(svg, { 'mergePaths': true}).then(svg => {
 
 			// Change colours
 			tools.ChangePalette(svg, brandOptions).then(svg => {
@@ -116,13 +133,34 @@ const singleSVG = () => {
 
 	}).catch(err => console.log(err));
 };
+ 
+// Symbolise
+const symbolise = () => {
+	// Read Directory
+	fs.readdir(input, function(err, items) {
+	    for (var i=0; i<items.length; i++) {
+	    	const filename = items[i];
+
+	    	const ext = path.extname(filename);
+
+	    	if (ext === '.svg') {
+				// If SVG then run through the templater
+				console.log('Processing SVG: ', filename);
+				const symbol = (`<symbol id="${filename.split('.').slice(0, -1).join('.')}">{% include "../brand/coop/images/${filename}" %}</symbol>`);
+				fs.appendFileSync(output + 'icon-sym-list.njk', symbol+"\r\n");
+			} else {
+				// If not SVG then ignore. 
+				console.log('Sorry, This file is not an SVG icon: ', filename);
+			}
+	    } 
+	}); 
+};
 
 // REQ: Single SVG rebrand
 if (argv.rebrand) {
     console.log('Hold tight. Rebranding SVGs...');
     // Update SVG...
     singleSVG(); 
-
 }
 
 // REQ: Bulk SVG rebrand
@@ -131,5 +169,12 @@ if (argv.collection) {
     console.log('------------------------------------------');
     // Update SVGs...
     collectionSVG(); 
+}
 
+// REQ: Symbolise SVG icons
+if (argv.symbolise) {
+    console.log('Hold tight. Finding icons and collating them into symbols');
+    console.log('------------------------------------------');
+    // Update SVGs...
+    symbolise(); 
 }
