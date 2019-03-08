@@ -11,4 +11,4 @@ Run `node index.js --collection` to run the app and rebrand/recolour svgs.
 
 Run `node index.js --symbolise` to run the app and output the found icons as an svg instance to be used in a nunjucks file. ie:
 
-`<symbol id="icon-house">{% include "../brand/coop/images/icon-house.svg" %}</symbol>`
+`<symbol id="icon-house">{% include "../images/icon-house.svg" %}</symbol>`
