@@ -3,49 +3,45 @@ const yargs = require('yargs');
 const tools = require('simple-svg-tools');
 const fs = require('fs');
 const path = require('path');
+const prompt = require('prompt');
 
 // Options > Rebrand options 
 const brandOptions = { 
 	// eg: 'green':'red' replaces the colour green with red.
 	// 'default': 'red' change all to red if no colours specified.
 	'#696868': 'red'
-} 
+}  
 
 // Options > Input/Output 
 const input = './input/';
 const output = './output/'; 
- 
+
 // Did you start correctly?
 console.log('------------------------------------------');
 console.log('SVG rebrander reporting for duty.');
 console.log('------------------------------------------');
 
+prompt.start();
 
-// Commands 
-const argv = yargs
-    .options({
-        u: {
-            demand: false,
-            alias: 'rebrand',
-            describe: 'Rebrand an SVG',
-            string: false
-        }, 
-        c:{
-        	demand: false,
-        	alias: 'collection',
-        	describe: 'Bulk rebrand SVGs by folder',
-        	string: false
-        },
-        o: {
-        	demand: false,
-        	alias: 'symbolise',
-        	describe: 'output SVG symbols into a .njk file',
-        	string: false
-        }
-    })
-    .help()
-    .alias('help', 'h')
-    .argv; 
+console.log('What would you like to do?');
+console.log('Type \'bulkbrand\' to run the bulk rebrander');
+console.log('Type \'sym\' to run the icon to njk symbolise function ');
+
+prompt.get(['command'], function (err, result) {
+	console.log('------------------------------------------');
+    console.log('Command-line input received:'  + result.command);
+    console.log('Please wait...');
+
+    if (result.command === 'bulkbrand') {
+    	console.log('Running bulk rebrander');
+    	collectionSVG(); 
+    }
+
+    if (result.command === 'sym') {
+    	console.log('Running symboliser');
+    	symbolise(); 
+    }
+  });
 
 // Bulk manipulate SVGs by folder
 const collectionSVG = () => {
@@ -136,45 +132,25 @@ const singleSVG = () => {
  
 // Symbolise
 const symbolise = () => {
+	
 	// Read Directory
 	fs.readdir(input, function(err, items) {
 	    for (var i=0; i<items.length; i++) {
 	    	const filename = items[i];
-
 	    	const ext = path.extname(filename);
-
 	    	if (ext === '.svg') {
+
 				// If SVG then run through the templater
 				console.log('Processing SVG: ', filename);
 				const symbol = (`<symbol id="${filename.split('.').slice(0, -1).join('.')}">{% include "../brand/coop/images/${filename}" %}</symbol>`);
 				fs.appendFileSync(output + 'icon-sym-list.njk', symbol+"\r\n");
+			
 			} else {
+				
 				// If not SVG then ignore. 
 				console.log('Sorry, This file is not an SVG icon: ', filename);
+			
 			}
 	    } 
 	}); 
 };
-
-// REQ: Single SVG rebrand
-if (argv.rebrand) {
-    console.log('Hold tight. Rebranding SVGs...');
-    // Update SVG...
-    singleSVG(); 
-}
-
-// REQ: Bulk SVG rebrand
-if (argv.collection) {
-    console.log('Hold tight. Rebranding SVGs collection...');
-    console.log('------------------------------------------');
-    // Update SVGs...
-    collectionSVG(); 
-}
-
-// REQ: Symbolise SVG icons
-if (argv.symbolise) {
-    console.log('Hold tight. Finding icons and collating them into symbols');
-    console.log('------------------------------------------');
-    // Update SVGs...
-    symbolise(); 
-}
