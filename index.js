@@ -4,6 +4,7 @@ const tools = require('simple-svg-tools');
 const fs = require('fs');
 const path = require('path');
 const prompt = require('prompt');
+const colors = require("colors/safe");
 
 // Options > Rebrand options 
 const brandOptions = { 
@@ -13,21 +14,21 @@ const brandOptions = {
 }  
 
 // Options > Input/Output 
-const input = './input/';
-const output = './output/'; 
+let input = './input/'; 
+let output = './output/'; 
 
 // Did you start correctly?
-console.log('------------------------------------------');
-console.log('SVG rebrander reporting for duty.');
-console.log('------------------------------------------');
+prompt.message = colors.magenta('SVG APP reporting for duty.');
 
-prompt.start();
-
+prompt.start(); 
+ 
 console.log('What would you like to do?');
-console.log('Type \'bulkbrand\' to run the bulk rebrander');
-console.log('Type \'sym\' to run the icon to njk symbolise function ');
 
-prompt.get(['command'], function (err, result) {
+prompt.get([{
+	name: 'command',
+	required: true,
+	description: '\n Type \'bulkbrand\' to run the bulk rebrander \n Type \'sym\' to run the icon to njk symbolise function \n'
+}], function (err, result) {
 	console.log('------------------------------------------');
     console.log('Command-line input received:'  + result.command);
     console.log('Please wait...');
@@ -47,6 +48,7 @@ prompt.get(['command'], function (err, result) {
 const collectionSVG = () => {
 	console.log(JSON.stringify(brandOptions, null, "  ")); 
 	console.log('------------------------------------------');
+	
 	// Import SVGs from direction
 	tools.ImportDir(input, {'include-subdirs': false}).then(collection => {
 
@@ -55,10 +57,7 @@ const collectionSVG = () => {
 	    console.log('Imported SVG: ' + name + '.svg');
 
 	    tools.GetPalette(svg).then(result => {
-		    console.log('Colors used in SVG: ' + result.colors.join(', '));
-		    if (result.notices.length) {
-		        result.notices.forEach(notice => console.log(notice));
-		    }
+		    //console.log('Colors used in SVG: ' + result.colors.join(', '));
 		}).catch(err => {
 		    console.log(err);
 		});
@@ -68,12 +67,11 @@ const collectionSVG = () => {
 
 			// Change colours
 			tools.ChangePalette(svg, brandOptions).then(svg => {
-				console.log('Rebranded: ' + name + '.svg'); 
+				//console.log('Rebranded: ' + name + '.svg'); 
 
 				//Export
 				tools.ExportSVG(svg, output + name + '.svg').then(() => { 
-					console.log('Exported: ' + name + '.svg');
-
+					console.log(colors.green('Exported: ' + name + '.svg'));
 				}).catch(err => {
 					console.log(err);
 				}); 
@@ -141,14 +139,15 @@ const symbolise = () => {
 	    	if (ext === '.svg') {
 
 				// If SVG then run through the templater
-				console.log('Processing SVG: ', filename);
+				console.log(colors.green('Processing SVG: ', filename));
+
 				const symbol = (`<symbol id="${filename.split('.').slice(0, -1).join('.')}">{% include "../brand/coop/images/${filename}" %}</symbol>`);
 				fs.appendFileSync(output + 'icon-sym-list.njk', symbol+"\r\n");
 			
 			} else {
 				
 				// If not SVG then ignore. 
-				console.log('Sorry, This file is not an SVG icon: ', filename);
+				console.log(colors.red('IGNORING: ', filename));
 			
 			}
 	    } 
