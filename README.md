@@ -7,8 +7,8 @@ Set brandOptions inside index.js to specify what colours you want to target, and
 
 By default app will look in `./input/` for svgs and output to `./output/`.
 
-Run `node index.js --collection` to run the app and rebrand/recolour svgs.
+Run `node index.js ` to run the app and follow the instructions.
 
-Run `node index.js --symbolise` to run the app and output the found icons as an svg instance to be used in a nunjucks file. ie:
+Run `sym` at prompt to output the found icons as an svg instance to be used in a nunjucks file. ie:
 
 `<symbol id="icon-house">{% include "../images/icon-house.svg" %}</symbol>`
